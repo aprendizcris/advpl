@@ -29,8 +29,11 @@ MenuDef - Lista de operações/opções do modelo/aplicação
 @return array, lista de opções (menu)
 /*/
 static function menuDef()
-return FWMVCMenu( "cadSZZ" )    // menu de opções do cadastro
+local aRotina := FWMVCMenu( "cadSZZ" )    // menu de opções do cadastro
 
+    ADD OPTION aRotina TITLE "Inclusão sem ViewDef" ACTION 'U_cadSZZInc' OPERATION 3 ACCESS 0 // Incluir
+
+return aRotina
 
 /*/{Protheus.doc} ModelDef
 MODEL - Controle do modelo/aplicação
@@ -69,3 +72,38 @@ local oView    := FWFormView():New()                        // objeto View do mo
     oView:CreateHorizontalBox( 'TELA' , 100 )               // cria formulário tela cheia 100%
     oView:SetOwnerView( 'VIEW_SZZ', 'TELA' )                // vincula campos no Box/formulário
 return oView
+
+
+
+/*/{Protheus.doc} cadSZZInc
+Inclui um registro direto pelo Model, sem chamar a View
+@type function
+@version 1.0
+@author cristiamRossi
+@since 12/06/2025
+/*/
+user function cadSZZInc()
+local oModel := FWLoadModel( "cadSZZ" )                 // instanciação do MODEL
+
+    oModel:SetOperation( MODEL_OPERATION_INSERT )       // operação a ser executada - INCLUSÃO
+    if oModel:Activate()                                // ativação do MODEL
+
+        oModel:SetValue( "SZZMASTER", "ZZ_DESCRI", "Inclusão sem View" )        // informamos os campos e valores
+        oModel:SetValue( "SZZMASTER", "ZZ_OBS"   , "É possível fazer inclusões diretamente pela Model" )
+
+        if oModel:VldData()                             // valida os dados preenchidos
+            oModel:CommitData()                         // se OK, grava
+        Else
+            aErro := oModel:GetErrorMessage()           // em caso de falha na validação do MODEL
+    		AutoGrLog( "Mensagem do erro: [" + AllToChar(aErro[6]) + "]" )      // salvo mensagem da falha 
+
+	    	if ! isBlind()                                          // estamos executando via Smartclient (temos tela)
+		    	Help(" ",1,"ERROR",,AllToChar(aErro[6]),4,1 )       // exibe mensagem da falha
+		    else
+    			MostraErro()                                        // exibe mensagem da falha
+	    	endif
+        endif
+
+        oModel:DeActivate()                             // desativamos o MODEL
+    endif
+return nil
